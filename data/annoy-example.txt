@@ -1,0 +1,25 @@
+======================================
+        Annoy Grid Search             
+======================================
+======================================
+Dataset: fmnist
+======================================
+--------------------------------------
+Parameters: NUM_TREES = 10
+--------------------------------------
+Building index for 10 trees...
+The indexing time is: 794.264ms.
+The indexing footprint is: 1MB
+--------------------------------------
+Evaluating SEARCH_K = 100
+--------------------------------------
+Average Distance Computations per query: 631.107
+The average query time is 0.0687656ms.
+When k = 1, (recall, ratio) = (0.8836, 1.00858)
+When k = 5, (recall, ratio) = (0.85166, 1.00985)
+When k = 10, (recall, ratio) = (0.82763, 1.01157)
+When k = 20, (recall, ratio) = (0.79553, 1.01432)
+When k = 50, (recall, ratio) = (0.73862, 1.02034)
+When k = 70, (recall, ratio) = (0.712081, 1.02366)
+When k = 100, (recall, ratio) = (0.680052, 1.02819)
+Peak Memory: 472MB

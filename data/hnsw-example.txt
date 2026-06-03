@@ -1,0 +1,21 @@
+HNSW Experiment Start: Τετ 13 Μαΐ 2026 02:17:53 μμ EEST
+----------
+RUN: Dataset=fmnist | M=16 | efC=32 | efS=32
+>>> Reading ivecs file: /home/lab_pc2/dimitropoulos/subspace-partition-ann-search/datasets/fmnist/groundtruth.ivecs
+>>> Detected vector dimension (k): 100
+Peak Construction Memory (RSS): 431 MB
+PERFORMANCE SUMMARY (fmnist)
+PARAMS: M=16 efConstruction=32 efSearch=32
+When k = 1, (recall, ratio) = (0.9813, 1.00192)
+When k = 5, (recall, ratio) = (0.98086, 1.00125)
+When k = 10, (recall, ratio) = (0.97795, 1.00115)
+When k = 20, (recall, ratio) = (0.96976, 1.00126)
+When k = 50, (recall, ratio) = (0.932936, 1.00228)
+When k = 70, (recall, ratio) = (0.902167, 1.00347)
+When k = 100, (recall, ratio) = (0.851566, 1.00606)
+The indexing time is: 4035.66 ms
+Search Phase Memory (RSS): 443MB
+Total search: 486.776 ms (0.0486776 ms/query)
+The average query time is 0.0486776 ms
+Average Distance Computations per query: 455.118
+------------------------------------------------

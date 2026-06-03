@@ -1,0 +1,2 @@
+Dataset,Clusters,TrainConfig,NProbe,Recall,Recall@1,Recall@10,Recall@20,Recall@50,Recall@70,Recall@100,Ratio,Ratio@1,Ratio@10,Ratio@20,Ratio@50,Ratio@70,Ratio@100,DistanceComps,SearchTime(ms),TotalConstructionTime(ms),TrainingTime(s),PeakMemory(MB),ConstructionMemory(MB),SearchMemory(MB)
+fmnist,32,Fast,2,91.95569754,96.27000093,94.83500123,94.19599771,93.04940104,92.58628488,91.95569754,1.004253507,1.002771497,1.003475666,1.003930449,1.004816771,1.005255699,1.005805135,543.6216,0.183748,3049.59,3.0,671,1522,466

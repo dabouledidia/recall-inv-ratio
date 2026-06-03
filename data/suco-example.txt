@@ -1,0 +1,26 @@
+Algo 2 Experiment Start: Δευ 25 Μαΐ 2026 12:34:22 μμ EEST
+----------
+CONFIG: DS=fmnist | SUB=49x16 | CR=0.02 | CAND=0.001
+----------
+>>> Loading dataset from: /home/lab_pc2/dimitropoulos/subspace-partition-ann-search/datasets/fmnist/base.fvecs
+Loaded 60000 vectors.
+>>> Loading query from: /home/lab_pc2/dimitropoulos/subspace-partition-ann-search/datasets/fmnist/query.fvecs
+Loaded 10000 vectors.
+>>> Loading groundtruth from: /home/lab_pc2/dimitropoulos/subspace-partition-ann-search/datasets/fmnist/groundtruth.ivecs
+Loaded 10000 ground truth records.
+Finish indexing the 0-th subspace.
+Finish saving the index to ./deep1M_index
+Peak Construction Memory (RSS): 1070MB
+Search Phase Memory (RSS): 633MB
+
+Average Distance Computations per query: 128.27
+The indexing time is: 4502.77ms.
+The indexing footprint is: 281MB
+The average query time is 0.074ms.
+When k = 1, (recall, ratio) = (0.9105, 1.00395)
+When k = 10, (recall, ratio) = (0.7619, 1.01444)
+When k = 20, (recall, ratio) = (0.664555, 1.02505)
+When k = 50, (recall, ratio) = (0.499636, 1.06334)
+When k = 70, (recall, ratio) = (0.432121, 1.14485)
+When k = 100, (recall, ratio) = (0.360478, 1.49805)
+Peak Memory: 1070MB
