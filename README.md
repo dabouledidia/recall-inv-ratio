@@ -20,10 +20,12 @@ The paper is structured around three experimental axes:
 ├── data/
 │   ├── hnsw-example.txt        # Example: HNSW benchmark runs
 │   └── ...                     # One file per algorithm
+├── datasets/                   # Place downloaded datasets here
 ├── scripts/
 │   ├── axis-1/                 # Cost-accuracy scripts and outputs
 │   ├── axis-2/                 # Classification scripts and outputs
 │   └── axis-3/                 # RAG scripts, pipeline, and outputs
+```
 ```
 
 ---
