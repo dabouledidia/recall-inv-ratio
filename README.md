@@ -26,7 +26,6 @@ The paper is structured around three experimental axes:
 │   ├── axis-2/                 # Classification scripts and outputs
 │   └── axis-3/                 # RAG scripts, pipeline, and outputs
 ```
-```
 
 ---
 
