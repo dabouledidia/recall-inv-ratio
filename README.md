@@ -221,3 +221,17 @@ cd scripts/axis-3
 python plot_rag_quality_curves.py
 python plot_rag_mad_bars.py
 ```
+## Reference
+
+References to cite:
+```
+@misc{dimitropoulos2026annsearchrecallmatters,
+      title={ANN Search: Recall What Matters}, 
+      author={Dimitris Dimitropoulos and Nikos Mamoulis},
+      year={2026},
+      eprint={2606.04522},
+      archivePrefix={arXiv},
+      primaryClass={cs.IR},
+      url={https://arxiv.org/abs/2606.04522}, 
+}
+```
