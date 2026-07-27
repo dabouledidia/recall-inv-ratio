@@ -68,7 +68,7 @@ All datasets for the Cost-Accuracy sweeps are available for download [here](http
 | AGNews | 769,382 | 1,000 | 1,024 |
 | SimpleWiki | 260,372 | 1,000 | 3,072 |
 | ImageNet-640 | 1,281,167 | 1,000 | 640 |
-| MNIST | 60,000 | 10,000 | 784 |
+| MNIST | 69,000 | 10,000 | 784 |
 | Fashion-MNIST | 60,000 | 10,000 | 784 |
 
 Place dataset files under `datasets/<name>/` following the paths expected by `benchmarks.py`.
