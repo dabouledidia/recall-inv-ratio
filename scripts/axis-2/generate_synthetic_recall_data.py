@@ -1,21 +1,3 @@
-"""
-generate_synthetic_recall_data.py
-=================================
-Axis-2 (classification) synthetic recall-control data generator.
-
-For a target recall r, we keep the closest round(r*100) exact neighbours of the
-query (the "gold" part) and replace the remaining 100(1-r) with non-gold
-neighbours drawn UNIFORMLY from a bounded window of the exact ordering beyond the
-top-100, i.e. from exact ranks [100, W). We report two windows:
-    default    W = 500   (the typical reach of a real HNSW, per the rank-reach table)
-    worst-case W = 1000  (a deeper stress test)
-At each recall level and window we record Label Precision@100 (normalised to
-exact search) and 1/Ratio@100.
-
-Output: semantic_stability.csv  (columns: dataset, window_N, recall, label_precision,
-        lp_norm, inv_ratio, exact_lp)
-"""
-
 import argparse
 import csv
 import sys
@@ -30,25 +12,23 @@ ROOT = SCRIPT_DIR.parent.parent
 PILLAR2 = SCRIPT_DIR
 
 K        = 100
-WINDOWS  = [500, 1000]                 # fill from exact ranks [100, W)
-TOPN     = max(WINDOWS) + 1            # exact neighbours to precompute
+WINDOWS  = [500, 1000]
+TOPN     = max(WINDOWS) + 1
 SEED     = 0
 RECALL_LEVELS = [0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
 
 DATASET_CONFIGS = {
-    "mnist":   {"title": "MNIST",         "hdf5": str(ROOT / "datasets/MNIST/mnist-784-euclidean.hdf5"),         "label_source": "hf",   "hf_name": "mnist"},
-    "fmnist":  {"title": "Fashion-MNIST", "hdf5": str(ROOT / "datasets/fmnist/fashion-mnist-784-euclidean.hdf5"), "label_source": "hf",   "hf_name": "fashion_mnist"},
-    "cifar10": {"title": "CIFAR-10",      "hdf5": str(ROOT / "datasets/cifar10/cifar10-3072-euclidean.hdf5"),     "label_source": "hdf5"},
-    "svhn":    {"title": "SVHN",          "hdf5": str(ROOT / "datasets/svhn/svhn-3072-euclidean.hdf5"),           "label_source": "hdf5"},
+    "mnist":   {"title": "MNIST",         "hdf5": str(ROOT / "datasets/MNIST/mnist-784-euclidean.hdf5"),          "label_source": "hf",   "hf_name": "mnist"},
+    "fmnist":  {"title": "Fashion-MNIST", "hdf5": str(ROOT / "datasets/fmnist/fashion-mnist-784-euclidean.hdf5"),  "label_source": "hf",   "hf_name": "fashion_mnist"},
+    "cifar10": {"title": "CIFAR-10",      "hdf5": str(ROOT / "datasets/cifar10/cifar10-3072-euclidean.hdf5"),      "label_source": "hdf5"},
+    "svhn":    {"title": "SVHN",          "hdf5": str(ROOT / "datasets/svhn/svhn-3072-euclidean.hdf5"),            "label_source": "hdf5"},
 }
 
 
 def log(msg): print(f"[{time.strftime('%H:%M:%S')}] {msg}", flush=True)
 
 
-# ── Data loading ────────────────────────────────────────────────────────────
-
-def load_dataset(name: str):
+def load_dataset(name):
     cfg = DATASET_CONFIGS[name]
     with h5py.File(cfg["hdf5"], "r") as f:
         train   = f["train"][:].astype(np.float32)
@@ -58,7 +38,6 @@ def load_dataset(name: str):
             query_labels = f["labels_test"][:].astype(np.int32)
         else:
             train_labels = query_labels = None
-
     if cfg["label_source"] == "hf":
         try:
             from datasets import load_dataset as hf_load
@@ -67,15 +46,12 @@ def load_dataset(name: str):
         log(f"  loading {cfg['hf_name']} labels from HuggingFace …")
         train_labels = np.array(hf_load(cfg["hf_name"], split="train")["label"], dtype=np.int32)
         query_labels = np.array(hf_load(cfg["hf_name"], split="test")["label"],  dtype=np.int32)
-
     assert len(train_labels) == len(train) and len(query_labels) == len(queries), \
         f"{name}: label/vector count mismatch"
     return train, queries, train_labels, query_labels
 
 
-def exact_topN(train: np.ndarray, queries: np.ndarray, N: int, batch: int = 400):
-    """Exact top-N by squared-L2; returns (indices, distances) sorted ascending."""
-    cache_i = PILLAR2 / f"topn_idx_{N}.npy"
+def exact_topN(train, queries, N, batch=400):
     tn2 = (train * train).sum(1)
     idx_out  = np.empty((len(queries), N), np.int64)
     dist_out = np.empty((len(queries), N), np.float32)
@@ -91,12 +67,7 @@ def exact_topN(train: np.ndarray, queries: np.ndarray, N: int, batch: int = 400)
     return idx_out, dist_out
 
 
-# ── Sweep ───────────────────────────────────────────────────────────────────
-
-def sweep(idx: np.ndarray, dist: np.ndarray, tr_lab: np.ndarray, te_lab: np.ndarray,
-          W: int, rng: np.random.Generator) -> list[dict]:
-    """One window W: for each recall level, keep the closest gold, fill the rest
-    uniformly from exact ranks [K, W)."""
+def sweep(idx, dist, tr_lab, te_lab, W, rng):
     nq = idx.shape[0]
     exact_lp = (tr_lab[idx[:, :K]] == te_lab[:, None]).mean(1)
     rows = []
@@ -112,8 +83,8 @@ def sweep(idx: np.ndarray, dist: np.ndarray, tr_lab: np.ndarray, te_lab: np.ndar
             lp = (tr_lab[ret] == te_lab[:, None]).mean(1)
             dfill = np.take_along_axis(dist, ranks, axis=1)
             dgt   = dist[:, n_gold:K]
-            rj    = np.where(dgt > 0, dfill / dgt, 1.0)       # per-position ratio
-            inv   = 1.0 / ((n_gold + rj.sum(1)) / K)          # 1/Ratio per query
+            rj    = np.where(dgt > 0, dfill / dgt, 1.0)
+            inv   = 1.0 / ((n_gold + rj.sum(1)) / K)
         inv_mean = float(inv.mean())
         rows.append(dict(window_N=W, recall=r,
                          label_precision=float(lp.mean()),
@@ -124,7 +95,7 @@ def sweep(idx: np.ndarray, dist: np.ndarray, tr_lab: np.ndarray, te_lab: np.ndar
     return rows
 
 
-def run_dataset(name: str) -> list[dict]:
+def run_dataset(name):
     log(f"Dataset: {name.upper()}")
     train, queries, tr_lab, te_lab = load_dataset(name)
     log(f"  train={train.shape}  queries={queries.shape}")
@@ -140,7 +111,7 @@ def run_dataset(name: str) -> list[dict]:
     return out
 
 
-def save_csv(all_rows: list[dict], path: Path) -> None:
+def save_csv(all_rows, path):
     fields = ["dataset", "window_N", "recall", "label_precision", "lp_norm", "inv_ratio", "ratio", "exact_lp"]
     with open(path, "w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=fields)
@@ -148,11 +119,11 @@ def save_csv(all_rows: list[dict], path: Path) -> None:
     log(f"CSV saved → {path}")
 
 
-def main() -> None:
+def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--datasets", nargs="+", default=["mnist", "fmnist", "cifar10", "svhn"])
     args = ap.parse_args()
-    all_rows: list[dict] = []
+    all_rows = []
     for name in args.datasets:
         all_rows.extend(run_dataset(name))
     save_csv(all_rows, PILLAR2 / "semantic_stability.csv")

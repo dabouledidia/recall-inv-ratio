@@ -50,8 +50,6 @@ def load_runs() -> dict[str, list[dict]]:
     return runs
 
 def graph_key(r):
-    """The index a run builds. Build time depends only on these parameters; every run
-    rebuilt its index, so runs of the same index differ in build time only by noise."""
     a = r["algo"]
     if a in ("HNSW", "SymphonyQG"): return (a, r.get("M"), r.get("efC"))
     if a == "SuCo":   return (a, r.get("sub"))
@@ -60,9 +58,6 @@ def graph_key(r):
     return (a, r.get("label"))
 
 def index_build_cost(runs, dataset, algo, k, threshold, metric):
-    """Per-index selection rule: an index's build cost is the MEAN build time over all
-    runs that built it; return the build cost of the cheapest index that reaches the
-    threshold. (The old per-run rule took the single cheapest run instead.)"""
     builds: dict = {}
     reaches: set = set()
     for r in runs:

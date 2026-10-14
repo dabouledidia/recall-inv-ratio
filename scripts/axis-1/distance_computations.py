@@ -49,7 +49,7 @@ def load_all_runs() -> dict[str, list[dict]]:
             print(f"  [SKIP] {algo_name}: {path} not found")
             continue
         runs = _PARSERS[cfg["parser"]](str(path))
-        if algo_name == "SuCo":                       # subtract the analytical constant (see paper)
+        if algo_name == "SuCo":
             for r in runs:
                 if r.get("dist_comps") is not None:
                     r["dist_comps"] -= SUCO_CONSTANT

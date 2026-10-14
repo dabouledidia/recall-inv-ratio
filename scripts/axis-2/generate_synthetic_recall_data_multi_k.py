@@ -1,20 +1,5 @@
-"""
-generate_synthetic_recall_data_multi_k.py
-=========================================
-Axis-2 classification sweep across neighbourhood sizes k, using the SAME bounded-
-window fill as generate_synthetic_recall_data.py (not the immediate near-miss fill).
-
-For each k, substitutes are drawn uniformly from exact ranks [k, W) with the window
-scaling with k:  W = 5k (the default window, = rank 500 at k=100). For each
-(dataset, k, recall) we record LP@k (normalised to exact search) and 1/Ratio@k.
-
-Output: semantic_stability_multi_k.csv
-        (dataset, k, recall, label_precision, lp_norm, inv_ratio, ratio, exact_lp)
-"""
-
 import argparse
 import csv
-import sys
 import time
 from pathlib import Path
 
@@ -26,22 +11,22 @@ ROOT = SCRIPT_DIR.parent.parent
 PILLAR2 = SCRIPT_DIR
 
 K_VALUES_DEFAULT = [1, 20, 50, 100]
-WINDOW_MULT = 5                               # W = 5k (default window)
+WINDOW_MULT = 5
 RECALL_LEVELS = [0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
 SEED = 0
 
 DATASET_CONFIGS = {
-    "mnist":   {"hdf5": str(ROOT / "datasets/MNIST/mnist-784-euclidean.hdf5"),          "label_source": "hf",   "hf_name": "mnist"},
-    "fmnist":  {"hdf5": str(ROOT / "datasets/fmnist/fashion-mnist-784-euclidean.hdf5"),  "label_source": "hf",   "hf_name": "fashion_mnist"},
-    "cifar10": {"hdf5": str(ROOT / "datasets/cifar10/cifar10-3072-euclidean.hdf5"),      "label_source": "hdf5"},
-    "svhn":    {"hdf5": str(ROOT / "datasets/svhn/svhn-3072-euclidean.hdf5"),            "label_source": "hdf5"},
+    "mnist":   {"hdf5": str(ROOT / "datasets/MNIST/mnist-784-euclidean.hdf5"),           "label_source": "hf",   "hf_name": "mnist"},
+    "fmnist":  {"hdf5": str(ROOT / "datasets/fmnist/fashion-mnist-784-euclidean.hdf5"),   "label_source": "hf",   "hf_name": "fashion_mnist"},
+    "cifar10": {"hdf5": str(ROOT / "datasets/cifar10/cifar10-3072-euclidean.hdf5"),       "label_source": "hdf5"},
+    "svhn":    {"hdf5": str(ROOT / "datasets/svhn/svhn-3072-euclidean.hdf5"),             "label_source": "hdf5"},
 }
 
 
 def log(msg): print(f"[{time.strftime('%H:%M:%S')}] {msg}", flush=True)
 
 
-def load_dataset(name: str):
+def load_dataset(name):
     cfg = DATASET_CONFIGS[name]
     with h5py.File(cfg["hdf5"], "r") as f:
         train   = f["train"][:].astype(np.float32)

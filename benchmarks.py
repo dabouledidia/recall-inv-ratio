@@ -33,9 +33,6 @@ def parse_hnsw(path: str) -> list[dict]:
         r"Dataset=([\w-]+)\s*\|\s*M=(\d+)\s*\|\s*efC=(\d+)\s*\|\s*efS=(\d+)"
     )
     _DC_RE = re.compile(r"Average Distance Computations per query:\s*([\d.]+)", re.IGNORECASE)
-    # "Average Distance Computations" counts adjacency edges traversed, an over-count (the counter
-    # is incremented before the visited-set filter). When the instrumented run also prints the exact
-    # per-query distance evaluations, prefer that corrected counter.
     _DC_EXACT_RE = re.compile(r"Exact Distance Computations per query:\s*([\d.]+)", re.IGNORECASE)
 
     for line in open(path, encoding="utf-8", errors="replace"):
@@ -75,7 +72,7 @@ def parse_hnsw(path: str) -> list[dict]:
             cur["build_ms"] = float(m.group(1))
             continue
 
-        m = _DC_EXACT_RE.search(line)              # corrected counter; overrides the edge count
+        m = _DC_EXACT_RE.search(line)
         if m and cur:
             cur["dist_comps"] = float(m.group(1))
             continue
@@ -162,9 +159,6 @@ def parse_symqg(path: str) -> list[dict]:
 
     hdr    = re.compile(r"Dataset=([\w-]+)\s*\|\s*M=(\d+)\s*\|\s*efC=(\d+)\s*\|\s*efS=(\d+)")
     _DC_RE = re.compile(r"Average Distance Computations per query:\s*([\d.]+)", re.IGNORECASE)
-    # "Average Distance Computations" counts adjacency edges traversed, an over-count (the counter
-    # is incremented before the visited-set filter). When the instrumented run also prints the exact
-    # per-query distance evaluations, prefer that corrected counter.
     _DC_EXACT_RE = re.compile(r"Exact Distance Computations per query:\s*([\d.]+)", re.IGNORECASE)
 
     for line in open(path, encoding="utf-8", errors="replace"):
@@ -204,7 +198,7 @@ def parse_symqg(path: str) -> list[dict]:
             cur["build_ms"] = float(m.group(1))
             continue
 
-        m = _DC_EXACT_RE.search(line)              # corrected counter; overrides the edge count
+        m = _DC_EXACT_RE.search(line)
         if m and cur:
             cur["dist_comps"] = float(m.group(1))
             continue

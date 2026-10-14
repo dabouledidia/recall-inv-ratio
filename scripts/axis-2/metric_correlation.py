@@ -31,7 +31,7 @@ def load_data(recall_min: float = RECALL_MIN, window_N: int = 500) -> pd.DataFra
     df = pd.read_csv(DATA_PATH)
     if "inv_ratio" not in df.columns:
         df["inv_ratio"] = 1.0 / df["ratio"]
-    if "window_N" in df.columns:                 # default window only
+    if "window_N" in df.columns:
         df = df[df["window_N"] == window_N]
     return df[df["recall"] >= recall_min - 1e-9].copy()
 
