@@ -144,7 +144,7 @@ def degradation_per_run(runs, dataset, algo, k_lo, k_hi, metric):
 
 def print_table6(all_runs: dict[str, list[dict]]) -> None:
     algos_rabitq = {}
-    rabitq_path = ROOT / "data/rabitq-recall-ratio.txt"
+    rabitq_path = ROOT / "data/rabitq-example.txt"
     if rabitq_path.exists():
         algos_rabitq["RaBitQ"] = parse_rabitq(str(rabitq_path))
 

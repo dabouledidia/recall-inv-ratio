@@ -36,7 +36,10 @@ plt.rcParams.update({"font.size": 11, "figure.dpi": 150})
 
 def load_data() -> pd.DataFrame:
     df = pd.read_csv(DATA_PATH)
-    df["inv_ratio"] = 1.0 / df["ratio"]
+    if "scenario" in df.columns:
+        df = df[df["scenario"] == "default"]
+    if "inv_ratio" not in df.columns:
+        df["inv_ratio"] = 1.0 / df["ratio"]
     return df
 
 def get_values(df: pd.DataFrame, ds: str, k: int):

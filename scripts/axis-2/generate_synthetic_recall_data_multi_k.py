@@ -11,7 +11,7 @@ ROOT = SCRIPT_DIR.parent.parent
 PILLAR2 = SCRIPT_DIR
 
 K_VALUES_DEFAULT = [1, 20, 50, 100]
-WINDOW_MULT = 5
+SCENARIOS = {"default": 5, "worst-case": 10}
 RECALL_LEVELS = [0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
 SEED = 0
 
@@ -91,15 +91,16 @@ def sweep_k(idx, dist, tr_lab, te_lab, k, W, rng):
 def run_dataset(name, k_values):
     log(f"Dataset: {name.upper()}")
     train, queries, tr_lab, te_lab = load_dataset(name)
-    N = max(k_values) * WINDOW_MULT + 1
+    N = max(k_values) * max(SCENARIOS.values()) + 1
     log(f"  computing exact top-{N} neighbours …")
     idx, dist = exact_topN(train, queries, N)
     out = []
-    rng = np.random.default_rng(SEED)
-    for k in k_values:
-        for row in sweep_k(idx, dist, tr_lab, te_lab, k, k * WINDOW_MULT, rng):
-            out.append(dict(dataset=name, **row))
-        log(f"  k={k:3d} (W={k*WINDOW_MULT})")
+    for scenario, mult in SCENARIOS.items():
+        rng = np.random.default_rng(SEED)
+        for k in k_values:
+            for row in sweep_k(idx, dist, tr_lab, te_lab, k, k * mult, rng):
+                out.append(dict(dataset=name, scenario=scenario, window_N=k * mult, **row))
+        log(f"  {scenario} (W = {mult}k)")
     return out
 
 
@@ -112,7 +113,7 @@ def main():
     for name in args.datasets:
         all_rows.extend(run_dataset(name, args.k_values))
     out = PILLAR2 / "semantic_stability_multi_k.csv"
-    fields = ["dataset", "k", "recall", "label_precision", "lp_norm", "inv_ratio", "ratio", "exact_lp"]
+    fields = ["dataset", "scenario", "window_N", "k", "recall", "label_precision", "lp_norm", "inv_ratio", "ratio", "exact_lp"]
     with open(out, "w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=fields); w.writeheader(); w.writerows(all_rows)
     log(f"CSV saved → {out}  ({len(all_rows)} rows)")
