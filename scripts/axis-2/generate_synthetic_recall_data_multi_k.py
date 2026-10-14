@@ -1,183 +1,137 @@
+"""
+generate_synthetic_recall_data_multi_k.py
+=========================================
+Axis-2 classification sweep across neighbourhood sizes k, using the SAME bounded-
+window fill as generate_synthetic_recall_data.py (not the immediate near-miss fill).
+
+For each k, substitutes are drawn uniformly from exact ranks [k, W) with the window
+scaling with k:  W = 5k (the default window, = rank 500 at k=100). For each
+(dataset, k, recall) we record LP@k (normalised to exact search) and 1/Ratio@k.
+
+Output: semantic_stability_multi_k.csv
+        (dataset, k, recall, label_precision, lp_norm, inv_ratio, ratio, exact_lp)
+"""
 
 import argparse
 import csv
-import os
 import sys
 import time
+from pathlib import Path
 
 import h5py
 import numpy as np
 
-NEAR_K   = 200   # extended search depth; positions k…NEAR_K are the near-miss pool
+SCRIPT_DIR = Path(__file__).resolve().parent
+ROOT = SCRIPT_DIR.parent.parent
+PILLAR2 = SCRIPT_DIR
 
-RECALL_LEVELS = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.95, 1.0]
-K_VALUES_DEFAULT = [1, 10, 20, 50, 100]
+K_VALUES_DEFAULT = [1, 20, 50, 100]
+WINDOW_MULT = 5                               # W = 5k (default window)
+RECALL_LEVELS = [0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+SEED = 0
 
 DATASET_CONFIGS = {
-    "mnist": {
-        "hdf5":         str(ROOT / "datasets/MNIST/mnist-784-euclidean.hdf5"),
-        "label_source": "hf",
-        "hf_name":      "mnist",
-    },
-    "fmnist": {
-        "hdf5":         str(ROOT / "datasets/fmnist/fashion-mnist-784-euclidean.hdf5"),
-        "label_source": "hf",
-        "hf_name":      "fashion_mnist",
-    },    "cifar10": {
-        "hdf5":         str(ROOT / "datasets/cifar10/cifar10-3072-euclidean.hdf5"),
-        "label_source": "hdf5",
-    },
-    "svhn": {
-        "hdf5":         str(ROOT / "datasets/svhn/svhn-3072-euclidean.hdf5"),
-        "label_source": "hdf5",
-    },}
+    "mnist":   {"hdf5": str(ROOT / "datasets/MNIST/mnist-784-euclidean.hdf5"),          "label_source": "hf",   "hf_name": "mnist"},
+    "fmnist":  {"hdf5": str(ROOT / "datasets/fmnist/fashion-mnist-784-euclidean.hdf5"),  "label_source": "hf",   "hf_name": "fashion_mnist"},
+    "cifar10": {"hdf5": str(ROOT / "datasets/cifar10/cifar10-3072-euclidean.hdf5"),      "label_source": "hdf5"},
+    "svhn":    {"hdf5": str(ROOT / "datasets/svhn/svhn-3072-euclidean.hdf5"),            "label_source": "hdf5"},
+}
+
+
+def log(msg): print(f"[{time.strftime('%H:%M:%S')}] {msg}", flush=True)
+
 
 def load_dataset(name: str):
     cfg = DATASET_CONFIGS[name]
     with h5py.File(cfg["hdf5"], "r") as f:
-        train     = f["train"][:]
-        queries   = f["test"][:]
-        neighbors = f["neighbors"][:]
+        train   = f["train"][:].astype(np.float32)
+        queries = f["test"][:].astype(np.float32)
         if cfg["label_source"] == "hdf5":
-            train_labels = f["labels_train"][:].astype(np.int32)
-            query_labels = f["labels_test"][:].astype(np.int32)
+            tr_lab = f["labels_train"][:].astype(np.int32)
+            te_lab = f["labels_test"][:].astype(np.int32)
         else:
-            train_labels = query_labels = None
-
+            tr_lab = te_lab = None
     if cfg["label_source"] == "hf":
-        try:
-            from datasets import load_dataset as hf_load
-        except ImportError:
-            print("ERROR: pip install datasets"); sys.exit(1)
-        hf_name = cfg["hf_name"]
-        print(f"  Loading {hf_name} labels from HuggingFace …")
-        ds_train = hf_load(hf_name, split="train")
-        ds_test  = hf_load(hf_name, split="test")
-        train_labels = np.array(ds_train["label"], dtype=np.int32)
-        query_labels = np.array(ds_test["label"],  dtype=np.int32)
+        from datasets import load_dataset as hf_load
+        log(f"  loading {cfg['hf_name']} labels from HuggingFace …")
+        tr_lab = np.array(hf_load(cfg["hf_name"], split="train")["label"], dtype=np.int32)
+        te_lab = np.array(hf_load(cfg["hf_name"], split="test")["label"],  dtype=np.int32)
+    return train, queries, tr_lab, te_lab
 
-    return train, queries, neighbors, train_labels, query_labels
 
-def load_extended_neighbors(name: str) -> np.ndarray:
-    cache = PILLAR2 / f"extended_neighbors_{name}.npy"
-    if not os.path.exists(cache):
-        print(f"ERROR: cache not found: {cache}")
-        print("  Run pillar2_semantic_stability.py first to build the cache.")
-        sys.exit(1)
-    nb = np.load(cache)
-    print(f"  Loaded extended neighbors from cache: {cache}  shape={nb.shape}")
-    return nb
+def exact_topN(train, queries, N, batch=400):
+    tn2 = (train * train).sum(1)
+    idx_out  = np.empty((len(queries), N), np.int64)
+    dist_out = np.empty((len(queries), N), np.float32)
+    for s in range(0, len(queries), batch):
+        qb = queries[s:s+batch]
+        d2 = tn2[None, :] - 2.0 * (qb @ train.T) + (qb * qb).sum(1)[:, None]
+        np.maximum(d2, 0, out=d2)
+        part = np.argpartition(d2, N-1, axis=1)[:, :N]
+        rows = np.arange(len(qb))[:, None]
+        order = np.argsort(d2[rows, part], axis=1)
+        idx_out[s:s+len(qb)]  = part[rows, order]
+        dist_out[s:s+len(qb)] = np.sqrt(d2[rows, part][rows, order])
+    return idx_out, dist_out
 
-def simulate_retrieval(nb200: np.ndarray, recall: float, k: int) -> np.ndarray:
-    n_exact = round(recall * k)
-    n_miss  = k - n_exact
-    exact_part = nb200[:, :n_exact]
-    miss_part  = nb200[:, k:k + n_miss]   # near-miss pool starts just past top-k
-    return np.hstack([exact_part, miss_part])
 
-def label_precision(retrieved: np.ndarray,
-                    train_labels: np.ndarray,
-                    query_labels: np.ndarray) -> float:
-    n = len(retrieved)
-    return float(sum(
-        np.mean(train_labels[retrieved[q]] == query_labels[q])
-        for q in range(n)
-    ) / n)
-
-def ratio_at_k(retrieved, ground_truth, train, queries, k=100, batch=500):
-    n = len(queries)
-    total = 0.0
-    for i in range(0, n, batch):
-        q   = queries[i:i+batch]
-        ret = retrieved[i:i+batch]
-        gt  = ground_truth[i:i+batch, :k]
-        d_ret = np.linalg.norm(train[ret] - q[:, None, :], axis=2)
-        d_gt  = np.linalg.norm(train[gt]  - q[:, None, :], axis=2)
-        mask  = d_gt == 0
-        total += np.where(mask, 1.0, d_ret / np.where(mask, 1.0, d_gt)).sum()
-    return float(total / (n * k))
-
-def precompute_d200(train: np.ndarray, queries: np.ndarray,
-                    nb200: np.ndarray, batch: int = 100) -> np.ndarray:
-    n, top = len(queries), nb200.shape[1]
-    d200 = np.zeros((n, top), dtype=np.float32)
-    t0 = time.time()
-    for i in range(0, n, batch):
-        q  = queries[i:i+batch].astype(np.float32)
-        nb = nb200[i:i+batch]
-        diff = train[nb].astype(np.float32) - q[:, None, :]
-        d200[i:i+batch] = np.linalg.norm(diff, axis=2)
-    print(f"  precompute_d200 done in {time.time()-t0:.1f}s")
-    return d200
-
-def fast_ratio_from_d200(d200: np.ndarray, recall: float, k: int) -> float:
-    n_exact = round(recall * k)
-    n_miss  = k - n_exact
-    d_ret = np.concatenate([d200[:, :n_exact], d200[:, k:k + n_miss]], axis=1)
-    d_gt  = d200[:, :k]
-    mask  = d_gt == 0
-    return float(np.where(mask, 1.0, d_ret / np.where(mask, 1.0, d_gt)).mean())
-
-def run_dataset(name: str, k_values: list[int]) -> list[dict]:
-    print(f"  Dataset: {name.upper()}")
-    train, queries, nb100, train_labels, query_labels = load_dataset(name)
-    nb200 = load_extended_neighbors(name)
-
-    print("  Precomputing distances to all 200 neighbours …")
-    d200 = precompute_d200(train, queries, nb200)
-
+def sweep_k(idx, dist, tr_lab, te_lab, k, W, rng):
+    nq = idx.shape[0]
+    exact_lp = (tr_lab[idx[:, :k]] == te_lab[:, None]).mean(1)
     rows = []
-    for k in k_values:
-        print(f"\n  --- k = {k} ---")
-        exact_retrieved = nb200[:, :k]
-        exact_lp    = label_precision(exact_retrieved, train_labels, query_labels)
-        exact_ratio = fast_ratio_from_d200(d200, 1.0, k)
-        print(f"    Exact LP@{k}={exact_lp:.4f}  Ratio={exact_ratio:.6f}")
-
-        for r in RECALL_LEVELS:
-            retrieved = simulate_retrieval(nb200, r, k)
-            lp_val  = label_precision(retrieved, train_labels, query_labels)
-            rat_val = fast_ratio_from_d200(d200, r, k)
-            rows.append(dict(
-                dataset=name,
-                k=k,
-                recall=r,
-                label_precision=lp_val,
-                lp_norm=lp_val / exact_lp,
-                ratio=rat_val,
-                ratio_norm=rat_val / exact_ratio,
-                exact_lp=exact_lp,
-                exact_ratio=exact_ratio,
-            ))
-            print(f"    recall={r:.2f}  LP={lp_val:.4f}  lp_norm={lp_val/exact_lp:.4f}"
-                  f"  ratio={rat_val:.4f}")
+    for r in RECALL_LEVELS:
+        n_gold = int(round(r * k)); n_fill = k - n_gold
+        if n_fill == 0:
+            lp = exact_lp; inv = np.ones(nq)
+        else:
+            gold = idx[:, :n_gold]
+            ranks = rng.integers(k, W, size=(nq, n_fill))
+            fill  = np.take_along_axis(idx, ranks, axis=1)
+            ret   = np.concatenate([gold, fill], axis=1)
+            lp = (tr_lab[ret] == te_lab[:, None]).mean(1)
+            dfill = np.take_along_axis(dist, ranks, axis=1)
+            dgt   = dist[:, n_gold:k]
+            rj    = np.where(dgt > 0, dfill / dgt, 1.0)
+            inv   = 1.0 / ((n_gold + rj.sum(1)) / k)
+        inv_mean = float(inv.mean())
+        rows.append(dict(k=k, recall=r,
+                         label_precision=float(lp.mean()),
+                         lp_norm=float(lp.mean() / exact_lp.mean()),
+                         inv_ratio=inv_mean,
+                         ratio=(1.0 / inv_mean if inv_mean else 1.0),
+                         exact_lp=float(exact_lp.mean())))
     return rows
 
-def save_csv(all_rows: list[dict], path: str) -> None:
-    fields = ["dataset", "k", "recall", "label_precision", "lp_norm",
-              "ratio", "ratio_norm", "exact_lp", "exact_ratio"]
-    with open(path, "w", newline="") as f:
-        w = csv.DictWriter(f, fieldnames=fields)
-        w.writeheader()
-        w.writerows(all_rows)
-    print(f"\nCSV saved → {path}  ({len(all_rows)} rows)")
 
-def main() -> None:
+def run_dataset(name, k_values):
+    log(f"Dataset: {name.upper()}")
+    train, queries, tr_lab, te_lab = load_dataset(name)
+    N = max(k_values) * WINDOW_MULT + 1
+    log(f"  computing exact top-{N} neighbours …")
+    idx, dist = exact_topN(train, queries, N)
+    out = []
+    rng = np.random.default_rng(SEED)
+    for k in k_values:
+        for row in sweep_k(idx, dist, tr_lab, te_lab, k, k * WINDOW_MULT, rng):
+            out.append(dict(dataset=name, **row))
+        log(f"  k={k:3d} (W={k*WINDOW_MULT})")
+    return out
+
+
+def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--datasets", nargs="+",
-                    default=["mnist", "fmnist", "cifar10", "svhn"],
-                    choices=list(DATASET_CONFIGS.keys()))
-    ap.add_argument("--k-values", nargs="+", type=int,
-                    default=K_VALUES_DEFAULT, dest="k_values")
+    ap.add_argument("--datasets", nargs="+", default=list(DATASET_CONFIGS), choices=list(DATASET_CONFIGS))
+    ap.add_argument("--k-values", nargs="+", type=int, default=K_VALUES_DEFAULT, dest="k_values")
     args = ap.parse_args()
-
-    PILLAR2.mkdir(parents=True, exist_ok=True)
-    all_rows: list[dict] = []
+    all_rows = []
     for name in args.datasets:
         all_rows.extend(run_dataset(name, args.k_values))
-
     out = PILLAR2 / "semantic_stability_multi_k.csv"
-    save_csv(all_rows, out)
-    print("\nDone. Re-run fig8_semantic_quality_bars.py to update plots.")
+    fields = ["dataset", "k", "recall", "label_precision", "lp_norm", "inv_ratio", "ratio", "exact_lp"]
+    with open(out, "w", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=fields); w.writeheader(); w.writerows(all_rows)
+    log(f"CSV saved → {out}  ({len(all_rows)} rows)")
 
-main()
+
+if __name__ == "__main__":
+    main()

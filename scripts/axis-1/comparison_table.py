@@ -49,29 +49,44 @@ def load_runs() -> dict[str, list[dict]]:
             print(f"  [SKIP] {name}: {path} not found")
     return runs
 
-def min_build(runs, dataset, algo, k, threshold, metric):
-    best = None
+def graph_key(r):
+    """The index a run builds. Build time depends only on these parameters; every run
+    rebuilt its index, so runs of the same index differ in build time only by noise."""
+    a = r["algo"]
+    if a in ("HNSW", "SymphonyQG"): return (a, r.get("M"), r.get("efC"))
+    if a == "SuCo":   return (a, r.get("sub"))
+    if a == "RaBitQ": return (a, r.get("clusters"), r.get("train_config"))
+    if a == "Annoy":  return (a, r.get("num_trees"))
+    return (a, r.get("label"))
+
+def index_build_cost(runs, dataset, algo, k, threshold, metric):
+    """Per-index selection rule: an index's build cost is the MEAN build time over all
+    runs that built it; return the build cost of the cheapest index that reaches the
+    threshold. (The old per-run rule took the single cheapest run instead.)"""
+    builds: dict = {}
+    reaches: set = set()
     for r in runs:
         if r["dataset"] != dataset or r["algo"] != algo:
             continue
+        g = graph_key(r)
         bms = r.get("build_ms")
-        if not bms or bms <= 0:
-            continue
+        if bms and bms > 0:
+            builds.setdefault(g, []).append(bms)
         for pt in r["points"]:
             if pt["k"] != k:
                 continue
             score = pt["recall"] if metric == "recall" else 1.0 / pt["ratio"]
             if score >= threshold:
-                if best is None or bms < best:
-                    best = bms
-    return best
+                reaches.add(g)
+    cand = [float(np.mean(builds[g])) for g in reaches if g in builds]
+    return min(cand) if cand else None
 
 def print_table3(all_runs: dict[str, list[dict]]) -> None:
     algos = [a for a in ["HNSW", "SymphonyQG", "SuCo", "Annoy"] if a in all_runs]
 
     def cell(algo, ds, T):
-        rc = min_build(all_runs[algo], ds, algo, K, T, "recall")
-        ir = min_build(all_runs[algo], ds, algo, K, T, "inv_ratio")
+        rc = index_build_cost(all_runs[algo], ds, algo, K, T, "recall")
+        ir = index_build_cost(all_runs[algo], ds, algo, K, T, "inv_ratio")
         if rc is None or ir is None or ir <= 0:
             return "N/A"
         return f"{rc/ir:.2f}×"
@@ -79,7 +94,7 @@ def print_table3(all_runs: dict[str, list[dict]]) -> None:
     col_w = 8
     T_headers = [f"T={T:.2f}" for T in THRESHOLDS]
 
-    print("Table 3  —  Min build time ratio (Recall / 1/Ratio) at k=100")
+    print("Table 3  —  Build time ratio (Recall / 1/Ratio), per-index rule, at k=100")
     print("N/A = Recall threshold unreachable at any configuration.")
     print("RaBitQ omitted — achieves exactly 1.00× across all datasets and thresholds.")
     print()
@@ -149,14 +164,14 @@ def print_table6(all_runs: dict[str, list[dict]]) -> None:
         rat_d = degradation_per_run(runs, ds, algo, K_LO, K_HI, "inv_ratio")
         if not rec_d or not rat_d:
             return None, None
-        return np.median(rec_d) * 100, np.median(rat_d) * 100
+        return np.mean(rec_d) * 100, np.mean(rat_d) * 100
 
     def fmt(v):
         if v is None:
             return "N/A"
         return f"{'+' if v >= 0 else ''}{v:.2f}"
 
-    print("Table 6  —  Median degradation of Recall and 1/Ratio (k = 1 → 100)")
+    print("Table 6  —  Mean degradation of Recall and 1/Ratio (k = 1 → 100)")
     print("Positive values = metric worsened (percentage points). Datasets sorted by LID.")
     print()
 

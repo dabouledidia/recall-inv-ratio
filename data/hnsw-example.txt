@@ -18,4 +18,5 @@ Search Phase Memory (RSS): 443MB
 Total search: 486.776 ms (0.0486776 ms/query)
 The average query time is 0.0486776 ms
 Average Distance Computations per query: 455.118
+Exact Distance Computations per query: 264.36
 ------------------------------------------------

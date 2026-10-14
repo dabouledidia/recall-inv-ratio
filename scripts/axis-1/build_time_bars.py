@@ -163,10 +163,10 @@ def plot_bars(all_runs: dict[str, list[dict]], table: dict, k: int) -> tuple:
 
 def print_report(all_runs: dict, table: dict, k: int) -> None:
     algo_names = list(all_runs.keys())
-    print(f"fig2_threshold_bars_build  — median ratio report  (k={k})")
+    print(f"fig2_threshold_bars_build  — geo-mean ratio report  (k={k})")
     print(f"  (ratio = red/blue = Recall build / 1/Ratio build; >1 means Recall costs more)")
     print()
-    print(f"  {'Threshold':>9s}  {'algo':8s}  {'median ratio (red/blue)':>24s}  unreachable")
+    print(f"  {'Threshold':>9s}  {'algo':8s}  {'geo-mean ratio (red/blue)':>24s}  unreachable")
     print("  " + "-" * 65)
     for T in THRESHOLDS:
         for algo_name in algo_names:
@@ -179,7 +179,7 @@ def print_report(all_runs: dict, table: dict, k: int) -> None:
                     unreachable.append(ds)
                 elif ir is not None and ir > 0:
                     ratios.append(rc / ir)
-            med = f"{np.median(ratios):.3f}x" if ratios else "N/A"
+            med = f"{float(np.exp(np.mean(np.log(ratios)))):.3f}x" if ratios else "N/A"
             unr = ", ".join(unreachable) if unreachable else "none"
             print(f"  T={T:.2f} {algo_name:8s}  {med:>24s}  {unr}")
 def main() -> None:

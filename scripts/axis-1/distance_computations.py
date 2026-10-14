@@ -36,6 +36,7 @@ _PARSERS = {"hnsw": parse_hnsw, "rabitq": parse_rabitq, "symqg": parse_symqg,
 
 THRESHOLDS = [0.90, 0.95, 0.99]
 K          = 100
+SUCO_CONSTANT = 50.0
 OUT_DIR = SCRIPT_DIR
 
 plt.rcParams.update({"font.size": 12, "figure.dpi": 150})
@@ -48,6 +49,10 @@ def load_all_runs() -> dict[str, list[dict]]:
             print(f"  [SKIP] {algo_name}: {path} not found")
             continue
         runs = _PARSERS[cfg["parser"]](str(path))
+        if algo_name == "SuCo":                       # subtract the analytical constant (see paper)
+            for r in runs:
+                if r.get("dist_comps") is not None:
+                    r["dist_comps"] -= SUCO_CONSTANT
         all_runs[algo_name] = runs
         print(f"  {algo_name}: {len(runs)} runs")
     return all_runs
@@ -166,7 +171,7 @@ def print_report(all_runs: dict, table: dict) -> None:
     print(f"  ratio = Recall dist_comps / 1/Ratio dist_comps")
     print(f"  >1 means Recall requires MORE distance computations")
     print()
-    print(f"  {'Threshold':>9s}  {'algo':12s}  {'median ratio':>14s}  unreachable datasets")
+    print(f"  {'Threshold':>9s}  {'algo':12s}  {'geo-mean ratio':>14s}  unreachable datasets")
     print("  " + "-" * 65)
     for T in THRESHOLDS:
         for algo_name in algo_names:
@@ -179,7 +184,7 @@ def print_report(all_runs: dict, table: dict) -> None:
                     unreachable.append(ds)
                 elif ir is not None and ir > 0:
                     ratios.append(rc / ir)
-            med = f"{np.median(ratios):.2f}x" if ratios else "N/A"
+            med = f"{float(np.exp(np.mean(np.log(ratios)))):.2f}x" if ratios else "N/A"
             unr = ", ".join(unreachable) if unreachable else "none"
             print(f"  T={T:.2f} {algo_name:12s}  {med:>14s}  {unr}")
 def main() -> None:

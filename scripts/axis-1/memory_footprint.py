@@ -159,7 +159,7 @@ def print_report(all_runs: dict, table: dict) -> None:
     print(f"  ratio = Recall memory / 1/Ratio memory")
     print(f"  >1 means Recall requires MORE memory")
     print()
-    print(f"  {'Threshold':>9s}  {'algo':12s}  {'median ratio':>14s}  unreachable datasets")
+    print(f"  {'Threshold':>9s}  {'algo':12s}  {'geo-mean ratio':>14s}  unreachable datasets")
     print("  " + "-" * 65)
     for T in THRESHOLDS:
         for algo_name in algo_names:
@@ -172,7 +172,7 @@ def print_report(all_runs: dict, table: dict) -> None:
                     unreachable.append(ds)
                 elif ir is not None and ir > 0:
                     ratios.append(rc / ir)
-            med = f"{np.median(ratios):.2f}x" if ratios else "N/A"
+            med = f"{float(np.exp(np.mean(np.log(ratios)))):.2f}x" if ratios else "N/A"
             unr = ", ".join(unreachable) if unreachable else "none"
             print(f"  T={T:.2f} {algo_name:12s}  {med:>14s}  {unr}")
             

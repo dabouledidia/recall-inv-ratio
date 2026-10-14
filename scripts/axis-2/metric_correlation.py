@@ -27,9 +27,12 @@ RECALL_MIN = 0.4
 
 plt.rcParams.update({"font.size": 12, "figure.dpi": 150})
 
-def load_data(recall_min: float = RECALL_MIN) -> pd.DataFrame:
+def load_data(recall_min: float = RECALL_MIN, window_N: int = 500) -> pd.DataFrame:
     df = pd.read_csv(DATA_PATH)
-    df["inv_ratio"] = 1.0 / df["ratio"]
+    if "inv_ratio" not in df.columns:
+        df["inv_ratio"] = 1.0 / df["ratio"]
+    if "window_N" in df.columns:                 # default window only
+        df = df[df["window_N"] == window_N]
     return df[df["recall"] >= recall_min - 1e-9].copy()
 
 def make_figure(df: pd.DataFrame, datasets: list[str]) -> plt.Figure:
