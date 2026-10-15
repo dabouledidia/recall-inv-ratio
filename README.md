@@ -212,6 +212,7 @@ Plot the normalized quality metrics and 1/Ratio@10 against recall for both windo
 cd scripts/axis-3
 python plot_rag_windows.py
 ```
+The committed `msmarco/results/rag_window_sweep.csv` is an example of the output format.
 ## Reference
 
 References to cite:
