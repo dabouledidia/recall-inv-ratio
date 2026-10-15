@@ -1,3 +1,0 @@
-recall_at_k,semantic_sim,bertscore_f1,grade_self_10,ratio
-0.4,0.5192,0.7512,9.125,1.021175
-1.0,0.535,0.7514,9.15,1.0
