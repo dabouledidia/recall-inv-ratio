@@ -1,11 +1,11 @@
-SymphonyQG Experiment Resume: Δευ 18 Μαΐ 2026 04:08:36 μμ EEST
+SymphonyQG Experiment Resume: Mon May 18 16:08:36 2026
 ----------
 RUN: Dataset=fmnist | M=32 | efC=32 | efS=32
-File /home/lab_pc2/dimitropoulos/subspace-partition-ann-search/datasets/fmnist/base.fvecs loaded
+File datasets/fmnist/base.fvecs loaded
 Rows 60000 Cols 784
-File /home/lab_pc2/dimitropoulos/subspace-partition-ann-search/datasets/fmnist/query.fvecs loaded
+File datasets/fmnist/query.fvecs loaded
 Rows 10000 Cols 784
-File /home/lab_pc2/dimitropoulos/subspace-partition-ann-search/datasets/fmnist/groundtruth.ivecs loaded
+File datasets/fmnist/groundtruth.ivecs loaded
 Rows 10000 Cols 100
 Setting entry_point to 37961
 	Vectors Copied

@@ -1,12 +1,12 @@
-Algo 2 Experiment Start: Δευ 25 Μαΐ 2026 12:34:22 μμ EEST
+Algo 2 Experiment Start: Mon May 25 12:34:22 2026
 ----------
 CONFIG: DS=fmnist | SUB=49x16 | CR=0.02 | CAND=0.001
 ----------
->>> Loading dataset from: /home/lab_pc2/dimitropoulos/subspace-partition-ann-search/datasets/fmnist/base.fvecs
+>>> Loading dataset from: datasets/fmnist/base.fvecs
 Loaded 60000 vectors.
->>> Loading query from: /home/lab_pc2/dimitropoulos/subspace-partition-ann-search/datasets/fmnist/query.fvecs
+>>> Loading query from: datasets/fmnist/query.fvecs
 Loaded 10000 vectors.
->>> Loading groundtruth from: /home/lab_pc2/dimitropoulos/subspace-partition-ann-search/datasets/fmnist/groundtruth.ivecs
+>>> Loading groundtruth from: datasets/fmnist/groundtruth.ivecs
 Loaded 10000 ground truth records.
 Finish indexing the 0-th subspace.
 Finish saving the index to ./deep1M_index

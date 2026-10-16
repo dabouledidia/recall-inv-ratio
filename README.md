@@ -75,18 +75,7 @@ Place dataset files under `datasets/<name>/` following the paths expected by `be
 
 ### Generating Benchmark Data
 
-If you wish to re-run the benchmark sweeps from scratch to generate the log files in `data/`:
-1. Build and run each algorithm (Faiss HNSW, RaBitQ, SymphonyQG, SuCo, Annoy) over the full hyperparameter grid sweep on the datasets.
-2. Ensure the stdout formatting matches the template files provided in `data/`. For example, search recall output must print lines matching:
-   `When k = [K], (recall, ratio) = ([RECALL], [RATIO])`
-   For the index footprint (Table 5), each build must also print its index size without the base vectors:
-   `Index Size (structure): [BYTES]`
-3. Save the redirected outputs into the `data/` directory:
-   * **HNSW**: `data/hnsw-example.txt`
-   * **RaBitQ**: `data/rabitq-example.txt`
-   * **SymphonyQG**: `data/symphonyQG-example.txt`
-   * **SuCo**: `data/suco-example.txt`
-   * **Annoy**: `data/annoy-example.txt`
+To re-run the sweeps, run each algorithm over its hyperparameter grid and save its output in `data/`, following the format of the example log for that algorithm (`hnsw-example.txt`, `rabitq-example.txt`, `symphonyQG-example.txt`, `suco-example.txt`, `annoy-example.txt`).
 
 ### Plotting and Analysis
 
@@ -129,7 +118,7 @@ cd scripts/axis-2
 python build_classification_datasets.py
 ```
 
-For MNIST and Fashion-MNIST, the HDF5 benchmark files from Axis 1 are reused, and their corresponding labels are programmatically downloaded from Hugging Face (`mnist` and `fashion_mnist` via the `datasets` library) at runtime. We have verified that the image vectors in the HDF5 benchmark files match the Hugging Face dataset byte-for-byte, ensuring perfect alignment of the downloaded labels.
+For MNIST and Fashion-MNIST, the HDF5 benchmark files from Axis 1 are reused, and their corresponding labels are programmatically downloaded from Hugging Face (`mnist` and `fashion_mnist` via the `datasets` library) at runtime.
 
 ### Running the Sweeps
 
@@ -139,7 +128,7 @@ cd scripts/axis-2
 python generate_synthetic_recall_data.py
 python generate_synthetic_recall_data_multi_k.py
 ```
-This produces `semantic_stability.csv` (k = 100, both windows) and `semantic_stability_multi_k.csv` (k ∈ {1, 20, 50, 100}, both windows) containing the Label Precision and 1/Ratio values for simulated recall levels $r \in [0.4, 1.0]$. The committed CSVs are small MNIST-only examples of the output format.
+This produces `semantic_stability.csv` (k = 100, both windows) and `semantic_stability_multi_k.csv` (k ∈ {1, 20, 50, 100}, both windows) containing the Label Precision and 1/Ratio values for simulated recall levels $r \in [0.4, 1.0]$. The committed CSVs (`scripts/axis-2/semantic_stability.csv`, `scripts/axis-2/semantic_stability_multi_k.csv`) are an example of the output format.
 
 ### Plotting and Analysis
 
@@ -217,20 +206,3 @@ cd scripts/axis-3
 python plot_rag_windows.py
 ```
 The committed `msmarco/results/rag_window_sweep.csv` is an example of the output format.
-
----
-
-## Reference
-
-References to cite:
-```
-@misc{dimitropoulos2026annsearchrecallmatters,
-      title={ANN Search: Recall What Matters}, 
-      author={Dimitris Dimitropoulos and Nikos Mamoulis},
-      year={2026},
-      eprint={2606.04522},
-      archivePrefix={arXiv},
-      primaryClass={cs.IR},
-      url={https://arxiv.org/abs/2606.04522}, 
-}
-```

@@ -576,5 +576,5 @@ def main() -> None:
         print(f"\nDumped {len(runs)} runs → {args.json}")
 
 
-
-main()
+if __name__ == "__main__":
+    main()

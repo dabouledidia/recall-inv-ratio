@@ -1,7 +1,7 @@
-HNSW Experiment Start: Τετ 13 Μαΐ 2026 02:17:53 μμ EEST
+HNSW Experiment Start: Wed May 13 14:17:53 2026
 ----------
 RUN: Dataset=fmnist | M=16 | efC=32 | efS=32
->>> Reading ivecs file: /home/lab_pc2/dimitropoulos/subspace-partition-ann-search/datasets/fmnist/groundtruth.ivecs
+>>> Reading ivecs file: datasets/fmnist/groundtruth.ivecs
 >>> Detected vector dimension (k): 100
 Peak Construction Memory (RSS): 431 MB
 PERFORMANCE SUMMARY (fmnist)
