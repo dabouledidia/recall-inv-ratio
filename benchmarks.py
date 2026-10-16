@@ -23,6 +23,7 @@ _IT_RE = re.compile(
 
 _BUILD_MEM_RE = re.compile(r"Peak Construction Memory \(RSS\):\s*([\d.]+)\s*MB", re.IGNORECASE)
 _SEARCH_MEM_RE = re.compile(r"Search Phase Memory \(RSS\):\s*([\d.]+)\s*MB", re.IGNORECASE)
+_INDEX_SIZE_RE = re.compile(r"Index Size \(structure\):\s*(\d+)", re.IGNORECASE)
 
 
 def parse_hnsw(path: str) -> list[dict]:
@@ -51,6 +52,7 @@ def parse_hnsw(path: str) -> list[dict]:
                 dist_comps=None,
                 build_mem=None,
                 search_mem=None,
+                index_bytes=None,
             )
             runs.append(cur)
             continue
@@ -89,6 +91,10 @@ def parse_hnsw(path: str) -> list[dict]:
         if m and cur and cur["search_mem"] is None:
             cur["search_mem"] = float(m.group(1))
 
+        m = _INDEX_SIZE_RE.search(line)
+        if m and cur and cur["index_bytes"] is None:
+            cur["index_bytes"] = int(m.group(1))
+
     return [r for r in runs if r["points"]]
 
 def parse_suco(path: str) -> list[dict]:
@@ -116,6 +122,7 @@ def parse_suco(path: str) -> list[dict]:
                 dist_comps=None,
                 build_mem=None,
                 search_mem=None,
+                index_bytes=None,
             )
             runs.append(cur)
             continue
@@ -151,6 +158,10 @@ def parse_suco(path: str) -> list[dict]:
         if m and cur and cur["search_mem"] is None:
             cur["search_mem"] = float(m.group(1))
 
+        m = _INDEX_SIZE_RE.search(line)
+        if m and cur and cur["index_bytes"] is None:
+            cur["index_bytes"] = int(m.group(1))
+
     return [r for r in runs if r["points"]]
 
 def parse_symqg(path: str) -> list[dict]:
@@ -177,6 +188,7 @@ def parse_symqg(path: str) -> list[dict]:
                 dist_comps=None,
                 build_mem=None,
                 search_mem=None,
+                index_bytes=None,
             )
             runs.append(cur)
             continue
@@ -214,6 +226,10 @@ def parse_symqg(path: str) -> list[dict]:
         m = _SEARCH_MEM_RE.search(line)
         if m and cur and cur["search_mem"] is None:
             cur["search_mem"] = float(m.group(1))
+
+        m = _INDEX_SIZE_RE.search(line)
+        if m and cur and cur["index_bytes"] is None:
+            cur["index_bytes"] = int(m.group(1))
 
     return [r for r in runs if r["points"]]
 
@@ -275,6 +291,7 @@ def parse_annoy(path: str) -> list[dict]:
     cur_dataset: str | None = None
     cur_num_trees: int | None = None
     cur_build_ms: float | None = None
+    cur_index_bytes: int | None = None
     cur_block_runs: list[dict] = []
     cur_run: dict | None = None
 
@@ -290,6 +307,7 @@ def parse_annoy(path: str) -> list[dict]:
             cur_dataset    = m.group(1)
             cur_num_trees  = None
             cur_build_ms   = None
+            cur_index_bytes = None
             cur_block_runs = []
             cur_run        = None
             continue
@@ -298,6 +316,7 @@ def parse_annoy(path: str) -> list[dict]:
         if m:
             cur_num_trees  = int(m.group(1))
             cur_build_ms   = None
+            cur_index_bytes = None
             cur_block_runs = []
             cur_run        = None
             continue
@@ -321,6 +340,7 @@ def parse_annoy(path: str) -> list[dict]:
                 build_ms=cur_build_ms,
                 dist_comps=None,
                 search_mem=None,
+                index_bytes=cur_index_bytes,
             )
             runs.append(cur_run)
             cur_block_runs.append(cur_run)
@@ -341,6 +361,13 @@ def parse_annoy(path: str) -> list[dict]:
             cur_run["points"].append(
                 dict(k=int(m.group(1)), recall=float(m.group(2)), ratio=float(m.group(3)))
             )
+            continue
+
+        m = _INDEX_SIZE_RE.search(line)
+        if m and cur_dataset and cur_num_trees is not None:
+            cur_index_bytes = int(m.group(1))
+            for r in cur_block_runs:
+                r["index_bytes"] = cur_index_bytes
             continue
 
         m = MEM_RE.search(line)
@@ -549,5 +576,5 @@ def main() -> None:
         print(f"\nDumped {len(runs)} runs → {args.json}")
 
 
-if __name__ == "__main__":
-    main()
+
+main()

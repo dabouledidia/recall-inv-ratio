@@ -59,7 +59,7 @@ def compute_neighbors_brute(train: np.ndarray, queries: np.ndarray,
     print(f"  Neighbour computation done in {time.time()-t0:.1f}s")
     return neighbors
 
-# Image → flat float32 vector
+# Image: flat float32 vector
 
 def img_to_vec(img) -> np.ndarray:
     return np.array(img.convert("RGB"), dtype=np.float32).flatten()

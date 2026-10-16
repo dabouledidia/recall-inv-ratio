@@ -10,6 +10,7 @@ Parameters: NUM_TREES = 10
 Building index for 10 trees...
 The indexing time is: 794.264ms.
 The indexing footprint is: 1MB
+Index Size (structure): 8026784
 --------------------------------------
 Evaluating SEARCH_K = 100
 --------------------------------------

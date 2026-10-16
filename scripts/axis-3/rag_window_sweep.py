@@ -259,5 +259,4 @@ def main():
         phase_C(a.dataset, out, csv_path)
 
 
-if __name__ == "__main__":
-    main()
+main()

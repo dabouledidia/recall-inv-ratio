@@ -123,5 +123,4 @@ def main():
     print_summary(data)
 
 
-if __name__ == "__main__":
-    main()
+main()

@@ -14,6 +14,7 @@ When k = 50, (recall, ratio) = (0.932936, 1.00228)
 When k = 70, (recall, ratio) = (0.902167, 1.00347)
 When k = 100, (recall, ratio) = (0.851566, 1.00606)
 The indexing time is: 4035.66 ms
+Index Size (structure): 8657274
 Search Phase Memory (RSS): 443MB
 Total search: 486.776 ms (0.0486776 ms/query)
 The average query time is 0.0486776 ms

@@ -79,7 +79,7 @@ ALGORITHMS = {
 
 K_VALUES  = [1, 20, 50, 100]
 OUT_DIR   = SCRIPT_DIR
-MIN_SCORE = 0.10   # below this at k=100 → algorithm failed on this dataset
+MIN_SCORE = 0.10   # below this at k=100, algorithm failed on this dataset
 
 def load_runs() -> dict[str, list[dict]]:
     runs = {}

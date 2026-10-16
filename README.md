@@ -79,6 +79,8 @@ If you wish to re-run the benchmark sweeps from scratch to generate the log file
 1. Build and run each algorithm (Faiss HNSW, RaBitQ, SymphonyQG, SuCo, Annoy) over the full hyperparameter grid sweep on the datasets.
 2. Ensure the stdout formatting matches the template files provided in `data/`. For example, search recall output must print lines matching:
    `When k = [K], (recall, ratio) = ([RECALL], [RATIO])`
+   For the index footprint (Table 5), each build must also print its index size without the base vectors:
+   `Index Size (structure): [BYTES]`
 3. Save the redirected outputs into the `data/` directory:
    * **HNSW**: `data/hnsw-example.txt`
    * **RaBitQ**: `data/rabitq-example.txt`
@@ -97,7 +99,8 @@ python distance_computations.py
 python build_time_bars.py
 python speedup_vs_k.py
 python recall_ratio_vs_k.py
-python memory_footprint.py
+python memory_footprint.py    # prints Table 5 (index footprint ratios)
+python comparison_table.py    # prints per-dataset build-time ratios and the k=1 to k=100 change of Recall and 1/Ratio
 ```
 
 ---
@@ -189,10 +192,11 @@ pip install datasets transformers  # loading HuggingFace QA datasets
 
 The RAG evaluation is executed end-to-end for each dataset. Replace `<dataset>` with `hotpotqa`, `msmarco`, `pubmedqa`, `scifact`, or `nfcorpus` in the commands below.
 
-1. **Ingest the Dataset**: Downloads raw corpora and queries from HuggingFace, embeddings them via `all-MiniLM-L6-v2`, and dumps files:
+1. **Ingest the Dataset**: Downloads raw corpora and queries from HuggingFace, embeds them via `all-MiniLM-L6-v2`, and dumps files:
    ```bash
    cd scripts/axis-3/<dataset>
-   python 1_ingest_<dataset>.py
+   python 1_ingest_<dataset>.py          # hotpotqa, msmarco, pubmedqa
+   python 1_build_corpus_<dataset>.py    # scifact, nfcorpus
    ```
 2. **Build Retrieval Index**: Builds the local HNSW database (M=16, efConstruction=200):
    ```bash
@@ -213,6 +217,9 @@ cd scripts/axis-3
 python plot_rag_windows.py
 ```
 The committed `msmarco/results/rag_window_sweep.csv` is an example of the output format.
+
+---
+
 ## Reference
 
 References to cite:

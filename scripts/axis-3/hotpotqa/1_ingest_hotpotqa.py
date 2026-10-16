@@ -12,7 +12,7 @@ QRELS_JSON = DATA_DIR / "qrels.json"
 EMBED_MODEL = "all-MiniLM-L6-v2"
 BATCH_SIZE  = 128
 
-# Use the validation split (7,405 questions) — held-out, no label leakage.
+# Use the validation split (7,405 questions) - held-out, no label leakage.
 HF_DATASET  = "hotpot_qa"
 HF_CONFIG   = "distractor"
 HF_SPLIT = "validation"
@@ -33,11 +33,10 @@ def build_data() -> None:
     print(f"Loading HotpotQA ({HF_CONFIG}, {HF_SPLIT}) from HuggingFace…")
     ds = load_dataset(HF_DATASET, HF_CONFIG, split=HF_SPLIT)
     print(f"  {len(ds):,} questions loaded")
-    # Each question carries up to 10 context paragraphs.  We deduplicate by
-    # article title so the corpus has one entry per Wikipedia article.
+
     print("Building corpus (deduplicating by Wikipedia title)…")
     docs: dict[str, dict] = {}
-    # title → {id, title, text}
+    # title: {id, title, text}
     for item in ds:
         titles = item["context"]["title"]
         sentences = item["context"]["sentences"]
@@ -70,13 +69,13 @@ def build_data() -> None:
         qid = str(item["id"])
         answer = item["answer"].strip()
 
-        # Supporting fact titles → doc IDs
+        # Supporting fact titles, doc IDs
         sup_titles = set(item["supporting_facts"]["title"])
         sup_doc_ids = [
             title_to_id[t] for t in sup_titles if t in title_to_id
         ]
         if not sup_doc_ids:
-            # All supporting titles were absent from context — skip.
+            # All supporting titles were absent from context - skip.
             skipped_no_supporting += 1
             continue
 

@@ -24,7 +24,7 @@ def build_index():
     vecs = np.load(CORPUS_NPY)
     n, dim = vecs.shape
 
-    # L2-normalise → inner product = cosine similarity
+    # L2-normalise, inner product = cosine similarity
     norms = np.linalg.norm(vecs, axis=1, keepdims=True)
     vecs  = vecs / np.maximum(norms, 1e-9)
 

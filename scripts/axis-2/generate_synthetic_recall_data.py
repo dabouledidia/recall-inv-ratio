@@ -129,5 +129,5 @@ def main():
     save_csv(all_rows, PILLAR2 / "semantic_stability.csv")
 
 
-if __name__ == "__main__":
-    main()
+
+main()

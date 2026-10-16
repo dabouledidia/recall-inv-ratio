@@ -119,5 +119,5 @@ def main():
     log(f"CSV saved → {out}  ({len(all_rows)} rows)")
 
 
-if __name__ == "__main__":
-    main()
+
+main()

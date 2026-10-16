@@ -43,7 +43,7 @@ def build_data() -> None:
     print("Scanning passages and filtering queries…")
 
     passage_registry: dict[str, str] = {}
-    # text → doc_id   (dedup store)
+    # text: doc_id   (dedup store)
 
     # Per-query data accumulated for the valid queries only.
     valid_queries: list[dict] = []

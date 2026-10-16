@@ -41,7 +41,6 @@ DS_LID = {
     "agnews": 24.09, "simplewiki-openai": 27.45, "gist": 32.35,
 }
 
-# Same palette as fig_lid_degradation for visual consistency
 DS_COLORS = {
     "MNIST":
     "#1B4F72",
@@ -130,7 +129,6 @@ def compute_speedups(all_runs: dict[str, list[dict]]) -> dict:
                     result[(algo_name, ds, k)] = None   # Recall unreachable
                 elif ir_ms is None or ir_ms <= 0:
                     result[(algo_name, ds, k)] = 1.0
-                    # 1/Ratio also missing → 1×
                 else:
                     result[(algo_name, ds, k)] = rc_ms / ir_ms
     return result
